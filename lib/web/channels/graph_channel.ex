@@ -36,12 +36,17 @@ defmodule Ophis.Web.GraphChannel do
   end
 
   @impl true
-  def handle_info(%{topic: "graph:update"}, socket) do
-    # Debounce: drain any queued updates during the sleep window,
-    # then push one snapshot. Matches the Rust version's 200ms throttle.
+  def handle_info(:updated, socket) do
+    # Debounce: drain queued updates, push one snapshot
     if socket.assigns[:debounce_timer], do: Process.cancel_timer(socket.assigns.debounce_timer)
     timer = Process.send_after(self(), :debounced_snapshot, @debounce_ms)
     {:noreply, assign(socket, :debounce_timer, timer)}
+  end
+
+  @impl true
+  def handle_info(%{topic: "graph:update"}, socket) do
+    # Same debounce for map-form broadcasts (backward compat)
+    handle_info(:updated, socket)
   end
 
   # ── Helpers ───────────────────────────────────────────────────────
