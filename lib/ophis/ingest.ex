@@ -7,7 +7,7 @@ defmodule Ophis.Ingest do
   shared `apply_event/2` function used by the HTTP ingest endpoint.
   """
 
-  alias Ophis.{GraphState, IngestEvent}
+  alias Ophis.{GraphState, IngestEvent, PubSub}
 
   require Logger
 
@@ -37,10 +37,12 @@ defmodule Ophis.Ingest do
   def apply_event(%IngestEvent{type: :rpc_call} = event) do
     ok = event.status == "ok"
     GraphState.record_call(event.source, event.target, event.duration_ms, ok)
+    Phoenix.PubSub.broadcast(PubSub, "graph:update", :updated)
   end
 
   def apply_event(%IngestEvent{type: :heartbeat} = event) do
     GraphState.touch_node(event.service)
+    Phoenix.PubSub.broadcast(PubSub, "graph:update", :updated)
   end
 
   # ── Private ───────────────────────────────────────────────────────
