@@ -20,6 +20,15 @@ defmodule Ophis.Web.GraphSocket do
 
   @impl true
   def init(_args) do
+    # Subscribe to graph updates
+    Phoenix.PubSub.subscribe(PubSub, "graph:update")
+
+    # Start ping timer every 15s (matches Rust version)
+    :timer.send_interval(15_000, :ping)
+
+    # Send initial snapshot
+    send(self(), :send_snapshot)
+
     state = %{debounce_timer: nil}
     {:ok, state}
   end
@@ -79,30 +88,10 @@ defmodule Ophis.Web.GraphSocket do
   end
 
   @impl true
-  def terminate(_reason, _state) do
+  def terminate(_reason, state) do
+    # Cancel any pending debounce timer
+    if state && state.debounce_timer, do: Process.cancel_timer(state.debounce_timer)
     :ok
-  end
-
-  # ── Open / Close ──────────────────────────────────────────────────
-
-  @impl true
-  def open(state) do
-    # Subscribe to graph updates
-    Phoenix.PubSub.subscribe(PubSub, "graph:update")
-
-    # Start ping timer every 15s (matches Rust version)
-    :timer.send_interval(15_000, :ping)
-
-    # Send initial snapshot
-    send(self(), :send_snapshot)
-
-    {:ok, state}
-  end
-
-  @impl true
-  def close(_reason, state) do
-    if state.debounce_timer, do: Process.cancel_timer(state.debounce_timer)
-    {:ok, state}
   end
 
   # ── Helpers ───────────────────────────────────────────────────────
