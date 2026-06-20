@@ -6,8 +6,6 @@ defmodule Ophis.Application do
   use Application
   alias Ophis.{EventStream, GraphState, Ingest, Metrics, PubSub, Repo, Telemetry, Web}
 
-  alias Persistence.Support
-
   @app :ophis
 
   @impl true
@@ -30,17 +28,11 @@ defmodule Ophis.Application do
       case own_node? do
         true ->
           [
-            # Core graph state (in-memory, ETS-backed)
             GraphState,
-
-            # UDP ingest listener (port 9999)
             {Ingest, []},
-
             Repo,
-
             EventStream,
             {Phoenix.PubSub, name: PubSub, adapter_name: Phoenix.PubSub.PG2},
-
             Web.Endpoint,
             {PlugAttack.Storage.Ets, name: Web.Plug.RateLimit.Storage, clean_period: 60_000}
           ]
@@ -55,9 +47,7 @@ defmodule Ophis.Application do
     opts = [strategy: :one_for_one, name: Ophis.Supervisor]
 
     with {:ok, _} = result <- Supervisor.start_link(children, opts),
-         {true, _} <- {own_node?, result},
-         :ok <- Support.create_db(Repo),
-         :ok <- Support.migrate(:up, Repo) do
+         {true, _} <- {own_node?, result} do
       result
     else
       {false, result} -> result
@@ -87,7 +77,7 @@ defmodule Ophis.Application do
 
     case System.get_env("JUICE_LOGGER_BACKEND") do
       "json" -> replace_backend.(LoggerJSON, :console)
-      x when x in [:"console", nil] -> replace_backend.(:console, LoggerJSON)
+      x when x in [:console, nil] -> replace_backend.(:console, LoggerJSON)
     end
   end
 end

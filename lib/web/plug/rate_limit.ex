@@ -5,7 +5,7 @@ defmodule Ophis.Web.Plug.RateLimit do
   import Plug.Conn
 
   rule "allow localhost requests", conn do
-    allow conn.remote_ip == {127, 0, 0, 1}
+    allow(conn.remote_ip == {127, 0, 0, 1})
   end
 
   rule "2 reqs/second", conn do
