@@ -41,6 +41,13 @@ defmodule Ophis.Web.Router do
     get "/apidoc", OpenApiSpex.Plug.SwaggerUI, @swagger_config
   end
 
+  # ── Ingest endpoint (root path for easy curl/nc use) ──────────────
+
+  scope "/", Web do
+    pipe_through :api
+    post "/ingest", IngestController, :ingest
+  end
+
   scope "/ophis", Web do
     pipe_through :api
 
