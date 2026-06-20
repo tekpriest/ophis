@@ -45,6 +45,7 @@ defmodule Ophis.Web.Router do
     pipe_through :api
 
     get "/that", Controller, :that
+    post "/ingest", IngestController, :ingest
 
     scope "/" do
       pipe_through :auth

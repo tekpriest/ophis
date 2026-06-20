@@ -16,6 +16,8 @@ defmodule Ophis.Web.Endpoint do
     signing_salt: "r72l1984"
   ]
 
+  plug :graph_websocket
+
   plug CommonUtils.Plug.Health, app: @app
   plug CommonUtils.Plug.Ping
   plug CommonUtils.Plug.LogRemoteIP
@@ -59,4 +61,18 @@ defmodule Ophis.Web.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
   plug Web.Router
+
+  # ── WebSocket upgrade for the graph dashboard ──────────────────────
+
+  defp graph_websocket(%{request_path: "/ws"} = conn, _opts) do
+    if WebSockAdapter.UpgradeValidation.can_upgrade?(conn) do
+      conn
+      |> WebSockAdapter.upgrade(Ophis.Web.GraphSocket, %{}, timeout: 60_000)
+      |> Plug.Conn.halt()
+    else
+      conn
+    end
+  end
+
+  defp graph_websocket(conn, _opts), do: conn
 end

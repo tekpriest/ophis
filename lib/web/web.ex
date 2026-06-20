@@ -7,7 +7,7 @@ defmodule Ophis.Web do
   """
   alias Ophis.Web
 
-  def static_paths, do: ~w(css fonts images js favicon.ico robots.txt)
+  def static_paths, do: ~w(css fonts images js favicon.ico robots.txt index.html)
 
   def controller do
     quote do
