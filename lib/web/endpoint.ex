@@ -66,7 +66,7 @@ defmodule Ophis.Web.Endpoint do
   # ── WebSocket upgrade for the graph dashboard ──────────────────────
 
   defp graph_websocket(%{request_path: "/ws"} = conn, _opts) do
-    if WebSockAdapter.UpgradeValidation.can_upgrade?(conn) do
+    if websocket_upgrade?(conn) do
       conn
       |> WebSockAdapter.upgrade(Ophis.Web.GraphSocket, %{}, timeout: 60_000)
       |> Plug.Conn.halt()
@@ -76,4 +76,11 @@ defmodule Ophis.Web.Endpoint do
   end
 
   defp graph_websocket(conn, _opts), do: conn
+
+  defp websocket_upgrade?(conn) do
+    case Plug.Conn.get_req_header(conn, "upgrade") do
+      ["websocket" | _] -> true
+      _ -> false
+    end
+  end
 end
