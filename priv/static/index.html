@@ -20,6 +20,7 @@
 </div>
 <div id="graph"></div>
 <script src="https://unpkg.com/force-graph"></script>
+<script src="https://unpkg.com/phoenix/priv/static/phoenix.js"></script>
 <script>
 const statusColor = { healthy: '#5DCAA5', degraded: '#EF9F27', down: '#E24B4A', unknown: '#888780' };
 
@@ -39,17 +40,23 @@ const Graph = ForceGraph()(elGraph)
   .backgroundColor('#0b0b0c');
 
 function connect() {
-  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const ws = new WebSocket(`${protocol}//${location.host}/ophis`);
+  const socket = new Phoenix.Socket("/socket", {
+    logger: (kind, msg, data) => { console.log(`[${kind}] ${msg}`, data); }
+  });
 
-  ws.onopen = () => { elStatus.textContent = 'live'; };
-  ws.onclose = () => {
+  socket.onOpen(() => { elStatus.textContent = 'live'; });
+  socket.onClose(() => {
     elStatus.textContent = 'disconnected, retrying…';
     setTimeout(connect, 2000);
-  };
-  ws.onerror = () => ws.close();
-  ws.onmessage = (ev) => {
-    const snapshot = JSON.parse(ev.data);
+  });
+  socket.onError(() => socket.disconnect());
+
+  socket.connect();
+
+  const channel = socket.channel("graph:live", {});
+
+  channel.on("snapshot", ({data}) => {
+    const snapshot = JSON.parse(data);
     const currentData = Graph.graphData();
 
     // Map existing nodes by ID to reuse their object references (and layout coordinates)
@@ -101,7 +108,11 @@ function connect() {
     });
 
     Graph.graphData({ nodes: nextNodes, links: nextLinks });
-  };
+  });
+
+  channel.join()
+    .receive("ok", () => { console.log("joined graph:live"); })
+    .receive("error", (resp) => { console.error("join failed", resp); });
 }
 
 connect();

@@ -18,7 +18,7 @@ defmodule Ophis.Web.Endpoint do
 
   plug PromEx.Plug, prom_ex_module: Metrics.PromEx
 
-  socket "/", Web.Socket, websocket: true, longpoll: false
+  socket "/socket", Web.Socket, websocket: true, longpoll: false
 
   # Handle health checks
   plug CommonUtils.Plug.Health, app: @app

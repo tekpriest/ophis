@@ -3,7 +3,7 @@ defmodule Ophis.Web.Socket do
   use Phoenix.Socket
 
   ## Channels
-  # channel "room:*", Ophis.Web.RoomChannel
+  channel "graph:live", Ophis.Web.GraphChannel
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After
