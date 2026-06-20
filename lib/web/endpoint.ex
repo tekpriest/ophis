@@ -39,7 +39,8 @@ defmodule Ophis.Web.Endpoint do
     at: "/",
     from: @app,
     gzip: false,
-    only: Web.static_paths()
+    only: Web.static_paths(),
+    index_file: "index.html"
 
   plug Web.Plug.MetricsExporter
 
