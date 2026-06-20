@@ -14,16 +14,18 @@ defmodule Ophis.Web.Router do
     plug Plug.Telemetry, event_prefix: [:ophis, :plug]
   end
 
-  pipeline :auth do
-    plug Auth.Plug.AuthPipeline
-    plug Auth.Plug.EnsureAccountIsLoaded
-  end
+  # pipeline :auth do
+  #   plug Auth.Plug.AuthPipeline
+  #   plug Auth.Plug.EnsureAccountIsLoaded
+  # end
 
   pipeline :docs do
     plug :accepts, ["json", "html"]
+
     plug :put_secure_browser_headers, %{
       "content-security-policy" => "default-src 'self' 'unsafe-inline' cdnjs.cloudflare.com"
     }
+
     plug OpenApiSpex.Plug.PutApiSpec, module: Web.Spec
   end
 
@@ -53,11 +55,5 @@ defmodule Ophis.Web.Router do
 
     get "/that", Controller, :that
     post "/ingest", IngestController, :ingest
-
-    scope "/" do
-      pipe_through :auth
-
-      get "/this", Controller, :this
-    end
   end
 end

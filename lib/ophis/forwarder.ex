@@ -60,7 +60,9 @@ defmodule Ophis.Forwarder do
 
     schedule_heartbeat()
 
-    Logger.info("Ophis forwarder started — forwarding to #{inspect(collector_addr)}:#{collector_port} as #{service_name}")
+    Logger.info(
+      "Ophis forwarder started — forwarding to #{inspect(collector_addr)}:#{collector_port} as #{service_name}"
+    )
 
     {:ok,
      %{
@@ -143,6 +145,7 @@ defmodule Ophis.Forwarder do
 
   # target = called service
   defp target_name(%{service: svc}) when not is_nil(svc), do: to_string(svc)
+
   defp target_name(%{mfa: {mod, _fun, _arity}}) when not is_nil(mod) do
     mod
     |> Atom.to_string()
@@ -151,6 +154,7 @@ defmodule Ophis.Forwarder do
     |> hd()
     |> Macro.underscore()
   end
+
   defp target_name(_), do: "unknown"
 
   defp schedule_heartbeat do

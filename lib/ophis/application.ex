@@ -35,12 +35,9 @@ defmodule Ophis.Application do
 
             # UDP ingest listener (port 9999)
             {Ingest, []},
-
             Repo,
-
             EventStream,
             {Phoenix.PubSub, name: PubSub, adapter_name: Phoenix.PubSub.PG2},
-
             Web.Endpoint,
             {PlugAttack.Storage.Ets, name: Web.Plug.RateLimit.Storage, clean_period: 60_000}
           ]
@@ -87,7 +84,7 @@ defmodule Ophis.Application do
 
     case System.get_env("JUICE_LOGGER_BACKEND") do
       "json" -> replace_backend.(LoggerJSON, :console)
-      x when x in [:"console", nil] -> replace_backend.(:console, LoggerJSON)
+      x when x in [:console, nil] -> replace_backend.(:console, LoggerJSON)
     end
   end
 end

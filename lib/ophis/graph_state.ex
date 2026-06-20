@@ -119,6 +119,7 @@ defmodule Ophis.GraphState do
 
     # Record edge
     edge_key = {source, target}
+
     edge =
       case :ets.lookup(@edge_table, edge_key) do
         [{^edge_key, existing}] -> existing

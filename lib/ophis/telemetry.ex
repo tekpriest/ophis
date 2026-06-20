@@ -2,10 +2,6 @@ defmodule Ophis.Telemetry do
   @moduledoc """
   Attaches to juice_rpc's `[:rpc, :request]` telemetry events to
   auto-populate the service graph.
-
-  No separate forwarder needed — ophis runs inside the BEAM cluster
-  and receives telemetry directly from any service using `JuiceRpc.call/4`
-  (the gen_rpc path).
   """
 
   alias Ophis.{GraphState, PubSub}

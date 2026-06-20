@@ -14,17 +14,15 @@ defmodule Ophis.Metrics.Setup do
 
   defp setup_telemetry(:prod) do
     OpentelemetryLoggerMetadata.setup()
-    
+
     @app
     |> Application.get_env(:repo)
     |> then(& &1.config())
     |> Keyword.get(:telemetry_prefix, [@app, :repo])
     |> OpentelemetryEcto.setup(db_statement: :enabled)
-    
-    
+
     OpentelemetryBandit.setup()
     OpentelemetryPhoenix.setup(adapter: :bandit)
-    
   end
 
   defp setup_telemetry(_), do: :ok

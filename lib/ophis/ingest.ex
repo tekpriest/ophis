@@ -73,15 +73,11 @@ defmodule Ophis.Ingest do
             apply_event(event)
 
           {:error, reason} ->
-            Logger.warning(
-              "Ingest UDP dropped invalid event (#{byte_size(payload)} bytes): #{reason}"
-            )
+            Logger.warning("Ingest UDP dropped invalid event (#{byte_size(payload)} bytes): #{reason}")
         end
 
       {:error, err} ->
-        Logger.warning(
-          "Ingest UDP dropped malformed JSON (#{byte_size(payload)} bytes): #{inspect(err)}"
-        )
+        Logger.warning("Ingest UDP dropped malformed JSON (#{byte_size(payload)} bytes): #{inspect(err)}")
     end
   end
 end

@@ -13,7 +13,6 @@ defmodule Ophis.Web.Controller do
     this: This,
     that: That
 
-
   operation :this,
     summary: "This",
     responses: [

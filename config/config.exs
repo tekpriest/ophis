@@ -1,10 +1,6 @@
 import Config
 
-
 alias Ophis.{Repo, Web}
-
-
-
 
 config :juice_rpc, env: config_env()
 config :accounts, env: config_env(), own_node: config_env() == :test
@@ -12,23 +8,15 @@ config :accounts, env: config_env(), own_node: config_env() == :test
 config :webhook, env: config_env(), own_node: false
 config :websocket, env: config_env(), own_node: false
 
-
 config :ophis,
-  
   env: config_env(),
-  
-  
   ecto_repos: [Repo],
   migration_repo: Repo,
   repo: Repo,
-  
-  
   own_node: true,
   deployment_env: {:system, "JUICE_ENVIRONMENT"},
   prometheus_user: {:system, "PROMETHEUS_USER", ""},
   prometheus_password: {:system, "PROMETHEUS_PASS", ""}
-  
-
 
 config :ophis, Web.Endpoint,
   adapter: Bandit.PhoenixAdapter,
@@ -49,13 +37,9 @@ config :phoenix, :json_library, Jason
 config :mime, :types, %{}
 config :request_validator, strict: true
 
-
-
 config :errand,
   supervisor: Ophis.ErrandSupervisor,
   tasks: [startup: {:once, {{:duration, {10, :s}}, {IO, :puts, ["ophis started"]}, [app_dependencies: [:ophis]]}}]
-
-
 
 config :ophis, Repo,
   priv: "priv/repo",
@@ -67,7 +51,6 @@ config :ophis, Repo,
   pool_size: 2
 
 config :persistence, env: config_env()
-
 
 config :http_client, env: config_env()
 
