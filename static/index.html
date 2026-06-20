@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>flowmap</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #fff; font-family: -apple-system, sans-serif; }
+  #graph { width: 100vw; height: 100vh; }
+  #status { position: fixed; top: 10px; left: 10px; color: #ccc; font-size: 12px; z-index: 1; }
+  #legend { position: fixed; top: 10px; right: 10px; color: #ccc; font-size: 12px; z-index: 1; }
+  #legend span { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; }
+</style>
+</head>
+<body>
+<div id="status">connecting…</div>
+<div id="legend">
+  <span style="background:#5DCAA5"></span>healthy
+  <span style="background:#EF9F27;margin-left:10px"></span>degraded
+  <span style="background:#888780;margin-left:10px"></span>unknown
+</div>
+<div id="graph"></div>
+<script src="https://unpkg.com/force-graph"></script>
+<script>
+const statusColor = { healthy: '#5DCAA5', degraded: '#EF9F27', down: '#E24B4A', unknown: '#888780' };
+
+const elGraph = document.getElementById('graph');
+const elStatus = document.getElementById('status');
+
+const Graph = ForceGraph()(elGraph)
+  .nodeId('id')
+  .nodeColor(n => statusColor[n.status] || statusColor.unknown)
+  .nodeLabel(n => `${n.id}\nstatus: ${n.status}\ncalls: ${n.call_count}`)
+  .linkSource('source')
+  .linkTarget('target')
+  .linkLabel(l => `${l.call_count} calls, ${l.avg_ms.toFixed(1)}ms avg, ${(l.error_rate * 100).toFixed(1)}% err`)
+  .linkDirectionalParticles(l => Math.min(4, Math.ceil(l.call_count / 10)))
+  .linkDirectionalParticleWidth(2)
+  .linkColor(l => l.error_rate > 0.1 ? '#E24B4A' : 'rgba(255,255,255,0.3)')
+  .backgroundColor('#0b0b0c');
+
+function connect() {
+  const ws = new WebSocket(`ws://${location.host}/ws`);
+
+  ws.onopen = () => { elStatus.textContent = 'live'; };
+  ws.onclose = () => {
+    elStatus.textContent = 'disconnected, retrying…';
+    setTimeout(connect, 2000);
+  };
+  ws.onerror = () => ws.close();
+  ws.onmessage = (ev) => {
+    const snapshot = JSON.parse(ev.data);
+    const currentData = Graph.graphData();
+
+    // Map existing nodes by ID to reuse their object references (and layout coordinates)
+    const nodeMap = new Map(currentData.nodes.map(node => [node.id, node]));
+
+    // Build the updated list of nodes
+    const nextNodes = snapshot.nodes.map(nodeData => {
+      const existingNode = nodeMap.get(nodeData.id);
+      if (existingNode) {
+        Object.assign(existingNode, nodeData);
+        // Pin existing nodes that have already been positioned to prevent them from moving
+        if (existingNode.x !== undefined && existingNode.x !== null) {
+          existingNode.fx = existingNode.x;
+          existingNode.fy = existingNode.y;
+        }
+        return existingNode;
+      }
+      return { ...nodeData };
+    });
+
+    // Create a map of the next nodes to resolve link source/target references
+    const nextNodeMap = new Map(nextNodes.map(node => [node.id, node]));
+
+    // Helper to get link identifier
+    const getLinkId = link => {
+      const srcId = typeof link.source === 'object' ? link.source.id : link.source;
+      const tgtId = typeof link.target === 'object' ? link.target.id : link.target;
+      return `${srcId}->${tgtId}`;
+    };
+
+    // Map existing links to reuse their object references
+    const linkMap = new Map(currentData.links.map(link => [getLinkId(link), link]));
+
+    // Build the updated list of links
+    const nextLinks = snapshot.edges.map(edgeData => {
+      const linkKey = `${edgeData.source}->${edgeData.target}`;
+      const existingLink = linkMap.get(linkKey);
+      if (existingLink) {
+        Object.assign(existingLink, edgeData);
+        existingLink.source = nextNodeMap.get(edgeData.source) || edgeData.source;
+        existingLink.target = nextNodeMap.get(edgeData.target) || edgeData.target;
+        return existingLink;
+      }
+      return {
+        ...edgeData,
+        source: nextNodeMap.get(edgeData.source) || edgeData.source,
+        target: nextNodeMap.get(edgeData.target) || edgeData.target
+      };
+    });
+
+    Graph.graphData({ nodes: nextNodes, links: nextLinks });
+  };
+}
+
+connect();
+</script>
+</body>
+</html>
