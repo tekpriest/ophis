@@ -98,7 +98,7 @@ defmodule Ophis.MixProject do
       
       {:libcluster_strategies, "~> 0.2", organization: "juiice"},
       
-      {:logger_json, "~> 5.1"},
+      {:logger_json, "~> 7.0"},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
       {:money, "~> 1.12"},
       {:observer_cli, "~> 1.7"},
@@ -134,7 +134,7 @@ defmodule Ophis.MixProject do
       {:request_response_logger, "~> 0.2", organization: "juiice"},
       {:request_validator, "~> 0.8", organization: "juiice"},
       
-      {:rop, "~> 0.6.0", organization: "juiice"},
+      {:rop, "~> 0.7", organization: "juiice"},
       
       {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false},
       
