@@ -1,7 +1,7 @@
 defmodule Ophis.Web.Endpoint do
   @moduledoc false
 
-  alias Ophis.Web
+  alias Ophis.{Metrics, Web}
 
   @app :ophis
 
@@ -16,8 +16,11 @@ defmodule Ophis.Web.Endpoint do
     signing_salt: "r72l1984"
   ]
 
-  plug :graph_websocket
+  plug PromEx.Plug, prom_ex_module: Metrics.PromEx
 
+  socket "/", Web.Socket, websocket: true, longpoll: false
+
+  # Handle health checks
   plug CommonUtils.Plug.Health, app: @app
   plug CommonUtils.Plug.Ping
   plug CommonUtils.Plug.LogRemoteIP
@@ -26,7 +29,7 @@ defmodule Ophis.Web.Endpoint do
     origins: "*",
     allow_credentials: true,
     allow_headers: ~w(accept accept-language authorization content-type idempotency-key responsetype x-account-id),
-    allow_methods: ~w(HEAD GET POST PATCH PUT DELETE),
+    allow_methods: ~w(HEAD GET POST),
     max_age: 86400
 
   plug Web.Plug.RateLimit
@@ -41,8 +44,6 @@ defmodule Ophis.Web.Endpoint do
     gzip: false,
     only: Web.static_paths(),
     index_file: "index.html"
-
-  plug Web.Plug.MetricsExporter
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
@@ -62,25 +63,4 @@ defmodule Ophis.Web.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
   plug Web.Router
-
-  # ── WebSocket upgrade for the graph dashboard ──────────────────────
-
-  defp graph_websocket(%{request_path: "/ws"} = conn, _opts) do
-    if websocket_upgrade?(conn) do
-      conn
-      |> WebSockAdapter.upgrade(Ophis.Web.GraphSocket, %{}, timeout: 60_000)
-      |> Plug.Conn.halt()
-    else
-      conn
-    end
-  end
-
-  defp graph_websocket(conn, _opts), do: conn
-
-  defp websocket_upgrade?(conn) do
-    case Plug.Conn.get_req_header(conn, "upgrade") do
-      ["websocket" | _] -> true
-      _ -> false
-    end
-  end
 end

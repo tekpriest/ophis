@@ -40,7 +40,7 @@ const Graph = ForceGraph()(elGraph)
 
 function connect() {
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const ws = new WebSocket(`${protocol}//${location.host}/ws`);
+  const ws = new WebSocket(`${protocol}//${location.host}/ophis`);
 
   ws.onopen = () => { elStatus.textContent = 'live'; };
   ws.onclose = () => {

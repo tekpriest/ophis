@@ -99,7 +99,7 @@ defmodule Ophis.GraphState do
     with [{^service, health}] <- :ets.lookup(@node_table, service),
          health <- %{health | last_seen: now, status: :healthy},
          _ <- :ets.insert(@node_table, {service, health}),
-        _ <- broadcast_update() do
+         _ <- broadcast_update() do
       {:noreply, state}
     else
       [] -> :ets.insert(@node_table, {service, default_node_health(now)})
@@ -113,7 +113,7 @@ defmodule Ophis.GraphState do
     with _ <- touch_node_ets(target, now),
          _ <- record_edge({source, target}, duration_ms, ok),
          _ <- record_source(source, now, ok),
-        _ <-broadcast_update() do
+         _ <- broadcast_update() do
       {:noreply, state}
     end
   end
