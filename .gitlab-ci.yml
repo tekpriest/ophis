@@ -1,0 +1,8 @@
+include:
+  - project: 'juice4/infrastructure/ci-template'
+    ref: 'main'
+    file: '.ci-template.yml'
+
+variables:
+  HOST_NAME: ophis.spendjuice.com
+  SERVICE_NAME: ophis

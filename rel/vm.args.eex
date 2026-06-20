@@ -1,0 +1,26 @@
+## Customize flags given to the VM: https://www.erlang.org/doc/man/erl.html
+## -mode/-name/-sname/-setcookie are configured via env vars, do not set them here
+
+## Increase number of concurrent ports/sockets
+##+Q 65536
+
+## Tweak GC to run more often
+##-env ERL_FULLSWEEP_AFTER 10
+
+## Force EPMD to use a static know port
+-kernel inet_dist_listen_min 4370
+-kernel inet_dist_listen_max 4370
+
+## Available and online schedulers (needs to be modified if we change CPU type from 8 vCPUs)
++S 8:8
+
+## Scheduler bind type
++sbt tnnps
+
+## Scheduler wakeup threshold
++swt very_low
+
+##  Scheduler busy wait thresholds
++sbwt none
++sbwtdcpu none
++sbwtdio none

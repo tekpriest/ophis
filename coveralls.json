@@ -1,0 +1,25 @@
+{
+  "coverage_options": {
+    "treat_no_relevant_lines_as_covered": true,
+    "minimum_coverage": 80
+  },
+  "skip_files": [
+    "lib/mix/tasks/*",
+    "lib/ophis/application.ex",
+    
+    "lib/ophis/metrics",
+    "lib/ophis/rpc.ex",
+    
+    
+    "lib/ophis/repo.ex",
+    
+    
+    "lib/web/channels",
+    "lib/web/router.ex",
+    "lib/web/spec.ex",
+    "lib/web/web.ex",
+    "lib/web/controller/fallback_controller.ex",
+    
+    "lib/test/support"
+  ]
+}
