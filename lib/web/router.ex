@@ -53,7 +53,6 @@ defmodule Ophis.Web.Router do
   scope "/ophis", Web do
     pipe_through :api
 
-    get "/that", Controller, :that
     post "/ingest", IngestController, :ingest
   end
 end

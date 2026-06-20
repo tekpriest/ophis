@@ -6,7 +6,7 @@ defmodule Ophis.GraphState do
   Mirror of the Rust `state.rs` — same data model, same snapshot shape.
   """
 
-  alias Ophis.PubSub
+  alias Phoenix.PubSub
 
   use GenServer
 
@@ -96,74 +96,26 @@ defmodule Ophis.GraphState do
   def handle_cast({:touch_node, service}, state) do
     now = System.monotonic_time(:millisecond)
 
-    case :ets.lookup(@node_table, service) do
-      [{^service, health}] ->
-        new_health = %{health | last_seen: now}
-        if health.status == :unknown, do: new_health = %{new_health | status: :healthy}
-        :ets.insert(@node_table, {service, new_health})
-
-      [] ->
-        :ets.insert(@node_table, {service, default_node_health(now)})
+    with [{^service, health}] <- :ets.lookup(@node_table, service),
+         health <- %{health | last_seen: now, status: :healthy},
+         _ <- :ets.insert(@node_table, {service, health}),
+        _ <- broadcast_update() do
+      {:noreply, state}
+    else
+      [] -> :ets.insert(@node_table, {service, default_node_health(now)})
     end
-
-    broadcast_update()
-    {:noreply, state}
   end
 
   @impl true
   def handle_cast({:record_call, source, target, duration_ms, ok}, state) do
     now = System.monotonic_time(:millisecond)
 
-    # Touch target
-    touch_node_ets(target, now)
-
-    # Record edge
-    edge_key = {source, target}
-
-    edge =
-      case :ets.lookup(@edge_table, edge_key) do
-        [{^edge_key, existing}] -> existing
-        [] -> default_edge_stats()
-      end
-
-    edge = %{
-      edge
-      | call_count: edge.call_count + 1,
-        total_duration_ms: edge.total_duration_ms + duration_ms
-    }
-
-    edge = if !ok, do: %{edge | error_count: edge.error_count + 1}, else: edge
-    :ets.insert(@edge_table, {edge_key, edge})
-
-    # Touch source and update its health
-    source_health =
-      case :ets.lookup(@node_table, source) do
-        [{^source, health}] -> health
-        [] -> default_node_health(now)
-      end
-
-    sample = if ok, do: 0.0, else: 1.0
-    new_error_rate = source_health.error_rate * (1.0 - @error_ema_alpha) + sample * @error_ema_alpha
-
-    new_status =
-      cond do
-        source_health.status == :down -> :down
-        new_error_rate > @degraded_threshold -> :degraded
-        true -> :healthy
-      end
-
-    source_health = %{
-      source_health
-      | last_seen: now,
-        call_count: source_health.call_count + 1,
-        error_rate: new_error_rate,
-        status: new_status
-    }
-
-    :ets.insert(@node_table, {source, source_health})
-
-    broadcast_update()
-    {:noreply, state}
+    with _ <- touch_node_ets(target, now),
+         _ <- record_edge({source, target}, duration_ms, ok),
+         _ <- record_source(source, now, ok),
+        _ <-broadcast_update() do
+      {:noreply, state}
+    end
   end
 
   @impl true
@@ -191,12 +143,10 @@ defmodule Ophis.GraphState do
   end
 
   defp touch_node_ets(service, now) do
-    case :ets.lookup(@node_table, service) do
-      [{^service, health}] ->
-        new_health = %{health | last_seen: now}
-        if health.status == :unknown, do: new_health = %{new_health | status: :healthy}
-        :ets.insert(@node_table, {service, new_health})
-
+    with [{^service, health}] <- :ets.lookup(@node_table, service),
+         health <- %{health | last_seen: now, status: :healthy} do
+      :ets.insert(@node_table, {service, health})
+    else
       [] ->
         :ets.insert(@node_table, {service, default_node_health(now)})
     end
@@ -212,9 +162,51 @@ defmodule Ophis.GraphState do
 
   defp round_float(f) when is_float(f), do: Float.round(f, 4)
 
-  defp broadcast_update do
-    Phoenix.PubSub.broadcast(PubSub, "graph:update", :updated)
-  rescue
-    _ -> :ok
+  defp broadcast_update, do: PubSub.broadcast(Ophis.PubSub, "graph:update", :updated)
+
+  defp record_edge(edge_key, duration, ok) do
+    edge =
+      case :ets.lookup(@edge_table, edge_key) do
+        [{^edge_key, existing}] -> existing
+        [] -> default_edge_stats()
+      end
+
+    edge = %{
+      edge
+      | call_count: edge.call_count + 1,
+        total_duration_ms: edge.total_duration_ms + duration
+    }
+
+    edge = if ok, do: edge, else: %{edge | error_count: edge.error_count + 1}
+    :ets.insert(@edge_table, {edge_key, edge})
+  end
+
+  defp record_source(source, now, ok) do
+    # Touch source and update its health
+    source_health =
+      case :ets.lookup(@node_table, source) do
+        [{^source, health}] -> health
+        [] -> default_node_health(now)
+      end
+
+    sample = if ok, do: 0.0, else: 1.0
+    new_error_rate = source_health.error_rate * (1.0 - @error_ema_alpha) + sample * @error_ema_alpha
+
+    new_status =
+      cond do
+        source_health.status == :down -> :down
+        new_error_rate > @degraded_threshold -> :degraded
+        true -> :healthy
+      end
+
+    source_health = %{
+      source_health
+      | last_seen: now,
+        call_count: source_health.call_count + 1,
+        error_rate: new_error_rate,
+        status: new_status
+    }
+
+    :ets.insert(@node_table, {source, source_health})
   end
 end

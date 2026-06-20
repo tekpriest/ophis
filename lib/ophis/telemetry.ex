@@ -5,6 +5,7 @@ defmodule Ophis.Telemetry do
   """
 
   alias Ophis.{GraphState, PubSub}
+  alias Phoenix.PubSub
 
   require Logger
 

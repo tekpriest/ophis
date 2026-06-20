@@ -1,8 +1,8 @@
 defmodule Ophis.Web.Spec do
   @moduledoc false
 
-  alias Ophis.Web.{Endpoint, Router}
   alias OpenApiSpex.{Components, Info, MediaType, OpenApi, Paths, Response, Schema, SecurityScheme, Server}
+  alias Ophis.Web.{Endpoint, Router}
 
   @behaviour OpenApi
 

@@ -12,7 +12,6 @@ defmodule Ophis.Ingest do
   require Logger
 
   @default_port 9999
-  @buffer_size 4096
 
   # ── Public API ────────────────────────────────────────────────────
 
@@ -26,6 +25,16 @@ defmodule Ophis.Ingest do
   def start_link(opts \\ []) do
     port = Keyword.get(opts, :port, @default_port)
     Task.start_link(fn -> listen(port) end)
+  end
+
+  def child_spec(opts) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [opts]},
+      type: :worker,
+      restart: :permanent,
+      shutdown: 500
+    }
   end
 
   @doc """

@@ -115,7 +115,8 @@ defmodule Ophis.Forwarder do
 
   defp send_rpc_call(state, measurements, metadata, status) do
     duration_ms =
-      Map.get(measurements, :duration, 0)
+      measurements
+      |> Map.get(:duration, 0)
       |> then(&System.convert_time_unit(&1, :native, :millisecond))
 
     send_event(state, %{
