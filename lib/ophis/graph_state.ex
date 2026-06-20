@@ -6,6 +6,8 @@ defmodule Ophis.GraphState do
   Mirror of the Rust `state.rs` — same data model, same snapshot shape.
   """
 
+  alias Ophis.PubSub
+
   use GenServer
 
   @node_table :ophis_nodes
@@ -104,6 +106,7 @@ defmodule Ophis.GraphState do
         :ets.insert(@node_table, {service, default_node_health(now)})
     end
 
+    broadcast_update()
     {:noreply, state}
   end
 
@@ -158,6 +161,7 @@ defmodule Ophis.GraphState do
 
     :ets.insert(@node_table, {source, source_health})
 
+    broadcast_update()
     {:noreply, state}
   end
 
@@ -206,4 +210,10 @@ defmodule Ophis.GraphState do
   end
 
   defp round_float(f) when is_float(f), do: Float.round(f, 4)
+
+  defp broadcast_update do
+    Phoenix.PubSub.broadcast(PubSub, "graph:update", :updated)
+  rescue
+    _ -> :ok
+  end
 end
